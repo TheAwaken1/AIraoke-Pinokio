@@ -1,5 +1,20 @@
 module.exports = {
   run: [
+    // NVIDIA GB10 (DGX Spark and compatible Linux systems) - needs CUDA 13.0 wheels for sm_121
+    {
+      "when": "{{platform === 'linux' && gpu === 'nvidia' && (arch === 'arm64' || (gpus && gpus.find(x => /GB10/i.test(x.model))))}}",
+      "method": "shell.run",
+      "params": {
+        "venv_python": "{{args && args.venv_python ? args.venv_python : null}}",
+        "venv": "{{args && args.venv ? args.venv : null}}",
+        "path": "{{args && args.path ? args.path : '.'}}",
+        "message": [
+          "uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130 --force-reinstall",
+          "uv pip install 'pillow<12'"
+        ]
+      },
+      "next": null
+    },
     // nvidia 50 series
     {
       "when": "{{platform === 'win32' && gpu === 'nvidia' && kernel.gpus && kernel.gpus.find(x => / 50.+/.test(x.model))}}",
@@ -66,7 +81,7 @@ module.exports = {
     },
     // linux nvidia 50 series
     {
-      "when": "{{platform === 'linux' && gpu === 'nvidia' && kernel.gpus && kernel.gpus.find(x => / 50.+/.test(x.model))}}",
+      "when": "{{platform === 'linux' && gpu === 'nvidia' && gpus && gpus.find(x => / 50.+/.test(x.model))}}",
       "method": "shell.run",
       "params": {
         "venv_python": "{{args && args.venv_python ? args.venv_python : null}}",

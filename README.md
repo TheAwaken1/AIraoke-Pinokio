@@ -33,24 +33,54 @@ AIraoke takes an audio file, a video, or a YouTube link and turns it into a kara
 - NVIDIA GPU recommended (CUDA acceleration for Whisper, Demucs, and NVENC video encoding); CPU works but is slower
 - Roughly 10 GB of disk space for dependencies and models
 
+### Platform notes
+
+Linux NVIDIA **GB10** systems (including **DGX Spark**) automatically use the CUDA 13.0
+PyTorch wheels required by the GPU's `sm_121` architecture. RTX 50-series systems use
+CUDA 12.8, while other supported NVIDIA, AMD, and CPU configurations retain their
+platform-specific install paths.
+
+If this launcher was installed before GB10 support was added, update it and click
+**Install** once more. This replaces the incompatible CUDA 12.4 PyTorch packages while
+preserving the downloaded app and its working files.
+
 ## Programmatic API
 
-The AIraoke UI is a Gradio app, so every action in the UI is callable programmatically while the app is running (default local URL shown in the launcher, e.g. `http://localhost:7861`).
+AIraoke exposes Gradio's generated API while **Start** is running. Use the URL shown by
+Pinokio as `BASE_URL` (the port is assigned dynamically). The exact input/output schema
+is available from the generated API description:
+
+```bash
+curl "$BASE_URL/gradio_api/openapi.json"
+```
+
+The main operations are `/process_transcription` and `/process_render`. Inspect the
+generated schema after updates because their ordered component inputs follow the
+current AIraoke UI.
 
 ### Python
 
 ```python
 from gradio_client import Client, handle_file
 
-client = Client("http://localhost:7861")
-# List callable endpoints and their parameters
-print(client.view_api())
+client = Client("http://127.0.0.1:PORT")
+client.view_api()
 
-# Example: transcribe an audio file (endpoint names come from view_api())
 result = client.predict(
-    handle_file("song.mp3"),  # audio file
-    api_name="/process_transcription"
+    handle_file("song.mp3"),  # audio
+    None,                     # video
+    "Artist",
+    "Song",
+    True,                     # use_gpu
+    "large-v3",
+    False,                    # use_llm_correction
+    None,                     # llm_corrector_model
+    False,                    # enable_beat_effects
+    False,                    # use_input_video
+    0,                        # lyrics_time_offset
+    api_name="/process_transcription",
 )
+print(result)
 ```
 
 ### JavaScript
@@ -58,24 +88,57 @@ result = client.predict(
 ```javascript
 import { Client, handle_file } from "@gradio/client";
 
-const client = await Client.connect("http://localhost:7861");
+const client = await Client.connect("http://127.0.0.1:PORT");
 console.log(await client.view_api());
 
-const result = await client.predict("/process_transcription", {
-  audio: handle_file("song.mp3"),
-});
+const result = await client.predict("/process_transcription", [
+  handle_file("./song.mp3"),
+  null,
+  "Artist",
+  "Song",
+  true,
+  "large-v3",
+  false,
+  null,
+  false,
+  false,
+  0
+]);
+console.log(result.data);
 ```
 
-### Curl
+### cURL
+
+First upload the input file:
 
 ```bash
-# Discover the API schema
-curl http://localhost:7861/gradio_api/info
+curl -X POST "$BASE_URL/gradio_api/upload" \
+  -F "files=@song.mp3"
+```
 
-# Call an endpoint (two-step: POST returns an event id, then stream the result)
-curl -X POST http://localhost:7861/gradio_api/call/process_transcription \
+The response is an array containing the server-side upload path. Insert that value as
+`UPLOADED_PATH`, then call the transcription endpoint using the named fields from the
+generated OpenAPI schema:
+
+```bash
+curl -X POST "$BASE_URL/gradio_api/run/process_transcription" \
   -H "Content-Type: application/json" \
-  -d '{"data": [{"path": "/path/to/song.mp3"}]}'
+  -d '{
+    "audio": {
+      "path": "UPLOADED_PATH",
+      "meta": {"_type": "gradio.FileData"}
+    },
+    "video": null,
+    "param_2": "Artist",
+    "param_3": "Song",
+    "param_4": true,
+    "param_5": "large-v3",
+    "param_6": false,
+    "param_7": null,
+    "param_8": false,
+    "param_9": false,
+    "param_10": 0
+  }'
 ```
 
 ## Troubleshooting
@@ -83,6 +146,7 @@ curl -X POST http://localhost:7861/gradio_api/call/process_transcription \
 - **Install or start fails:** check the logs under `logs/api/` in the launcher folder (`install.js/latest`, `start.js/latest`)
 - **Black video with no lyrics:** your FFmpeg lacks libass — re-run **Install**, which downloads a full FFmpeg build into `app/bin`
 - **Vocal volume has no effect:** the first separation per song takes a few minutes (Demucs); check `app/gradio_ui/gradio_ui.log`
+- **Transcription hangs or fails on Linux GB10 / DGX Spark:** the install predates GB10 support — click **Update**, then **Install** to switch to the CUDA 13.0 PyTorch wheels
 
 ## Credits
 
