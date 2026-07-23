@@ -10,5 +10,12 @@ module.exports = {
       path: "app",
       message: "git pull"
     }
+  }, {
+    method: "shell.run",
+    params: {
+      venv: "env",
+      path: "app",
+      message: "python -m pip install -U --pre yt-dlp[default]"
+    }
   }]
 }

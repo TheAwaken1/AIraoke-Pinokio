@@ -10,6 +10,15 @@ PINOKIO_SCRIPT_AUTOLAUNCH=
 
 ##########################################################################
 #
+# PINOKIO_SCRIPT_REQUIRES
+# comma-separated local app folder IDs this app requires before launch
+# requirements do not automatically enable run-at-startup for those apps
+#
+##########################################################################
+PINOKIO_SCRIPT_REQUIRES=
+
+##########################################################################
+#
 # PINOKIO_SHARE_CLOUDFLARE
 # Set this variable to share the app publicly via cloudflare tunnel.
 #
@@ -36,7 +45,7 @@ PINOKIO_SHARE_PASSCODE=
 # will NOT automatically run
 #
 ##########################################################################
-PINOKIO_SCRIPT_DEFAULT=false
+PINOKIO_SCRIPT_DEFAULT=true
 
 ##########################################################################
 #
@@ -93,3 +102,6 @@ PINOKIO_SHARE_LOCAL=false
 #
 ##########################################################################
 PINOKIO_SHARE_LOCAL_PORT=
+PINOKIO_NETWORK_NAME=p158
+PINOKIO_NETWORK_ACTIVE=1
+PINOKIO_HTTPS_ACTIVE=1
