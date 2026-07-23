@@ -1,6 +1,10 @@
 module.exports = {
-   "run": [
+  "requires": {
+    "bundle": "ai"
+  },
+  "run": [
     {
+      "when": "{{!exists('app')}}",
       "method": "shell.run",
       "params": {
         "message": "git clone https://github.com/TheAwaken1/AIraoke.git app",
@@ -30,7 +34,7 @@ module.exports = {
       "params": {
         "venv": "env",
         "path": "app",
-        "message": "python -m pip install --upgrade pip uv setuptools wheel"
+        "message": "python -m pip install --upgrade pip uv \"setuptools<82\" wheel"
       }
     },
     {
